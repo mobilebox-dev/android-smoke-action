@@ -63,6 +63,9 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 
 const started = Date.now()
 let passed = false
+// The proof comment's steps (#184): what the run did, with its times, as the agent's log would say it.
+const steps = []
+const since = (t) => `${((Date.now() - t) / 1000).toFixed(1)} s`
 try {
   // Retrying with the same Idempotency-Key returns the same phone, so a lost response cannot leak a second one.
   const idempotencyKey = crypto.randomUUID()
@@ -86,9 +89,12 @@ try {
   }
   if (phone.status !== 'ready') throw new Error(`Phone not ready: ${JSON.stringify(phone)}`)
   ready = true
+  steps.push(`Fresh cloud phone ready in ${since(started)}`)
 
   app = await call(`/v1/phones/${id}/apps?grant_permissions=true`, 'POST', await readFile(apk))
   console.log(`Installed ${app.package} ${app.version_name ?? ''} on ${id}`)
+  steps.push(`Installed \`${app.package}\`${app.version_name ? ` ${app.version_name}` : ''} from this build, permissions granted`)
+  const opened = Date.now()
   let result = await call(`/v1/phones/${id}/actions`, 'POST', { actions: [
     { type: 'open_app', package: app.package },
     { type: 'wait', ms: 2000 },
@@ -102,6 +108,9 @@ try {
     } while (!result.results[0].ok && result.results[0].error?.code === 'wait_timeout' && Date.now() < until)
   }
   const bad = result.results.find(item => !item.ok)
+  steps.push(waitFor
+    ? (bad?.error?.code === 'wait_timeout' ? `Opened it; "${waitFor}" did not appear within ${timeout} s` : `Opened it; "${waitFor}" on screen after ${since(opened)}`)
+    : `Opened it; ${result.screen.app === app.package ? 'still in the foreground' : `not in the foreground (shows ${result.screen.app})`} after ${since(opened)}`)
   if (bad?.error?.code === 'wait_timeout') throw new Error(`"${waitFor}" did not appear within ${timeout} s. Screen:\n${result.screen.text}`)
   if (bad) throw new Error(`${JSON.stringify(bad.error)}\nScreen:\n${result.screen.text}`)
   if (!waitFor && result.screen.app !== app.package) {
@@ -134,7 +143,7 @@ try {
   }
 }
 
-// The run's proof as one PR comment per artifact name, edited on later pushes: one line, the last screen, our link.
+// The run's proof as one PR comment per artifact name, edited on later pushes: one line, the last screen, the steps, our link.
 // Only on a pull request with comment: true; nothing is published otherwise. If the token cannot comment (fork PRs, no
 // pull-requests: write), the just-published proof is deleted again, so nothing is kept that nobody sees.
 async function proofComment() {
@@ -148,9 +157,12 @@ async function proofComment() {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': userAgent, 'X-GitHub-Api-Version': '2022-11-28' },
   })
   const proof = await call(`/v1/phones/${id}/proofs`, 'POST', { title: `${app.package} launch`, status: passed ? 'passed' : 'failed' })
-  const list = await github(`/repos/${repo}/issues/${number}/comments?per_page=100`)
-  const existing = list.ok ? (await list.json()).find(c => c.body?.startsWith(marker)) : undefined
-  const body = { body: `${marker}\n${proof.markdown}` }
+  const found = await github(`/repos/${repo}/issues/${number}/comments?per_page=100`)
+  const existing = found.ok ? (await found.json()).find(c => c.body?.startsWith(marker)) : undefined
+  // The steps go above our link, the last line of the API's markdown.
+  const lines = proof.markdown.split('\n'), link = lines.pop()
+  const list = [...steps, 'Screenshot of the last screen, then the phone is deleted'].map((s, i) => `${i + 1}. ${s}`)
+  const body = { body: [marker, ...lines, '**Steps**', ...list, '', link].join('\n') }
   const sent = await (existing ? github(`/repos/${repo}/issues/comments/${existing.id}`, 'PATCH', body) : github(`/repos/${repo}/issues/${number}/comments`, 'POST', body))
   if (sent.ok) {
     output('comment-url', (await sent.json()).html_url ?? '')
