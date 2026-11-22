@@ -63,11 +63,12 @@ jobs:
 
 **3. Push.** The job fails when the text doesn't show, and the run's artifacts hold a screenshot of the screen the phone saw. On a pull request the run leaves one comment, updated on every push:
 
-> ✅ com.example.app launch tested on a Mobilebox cloud phone · Android 14 · 23 s · $0.01<br>
+> ✅ com.example.app launch tested on a Mobilebox cloud phone · Android 14 · 6 s · $0.01<br>
 > *(the last screen)*<br>
-> Tested on Mobilebox
+> **Steps** 1. Fresh cloud phone ready in 0.4 s · 2. Installed `com.example.app` 1.0 · 3. Opened it; "Welcome" on screen after 3.5 s · 4. Screenshot, then the phone is deleted<br>
+> Tested on Mobilebox · Run your own phone
 
-A real one: [the proof comment on this repo's self-test PR](https://github.com/mobilebox-dev/android-smoke-action/pull/2#issuecomment-6808386702).
+Live ones: every pull request in [mobilebox-dev/proof-demo-calculator](https://github.com/mobilebox-dev/proof-demo-calculator/pulls?q=is%3Apr), a fork of Fossify Calculator that runs this action on each PR, and [this repo's self-test PR](https://github.com/mobilebox-dev/android-smoke-action/pull/2#issuecomment-6808386702).
 
 The screenshot is an image file at an unguessable address on mobilebox.dev, not indexed and not shown anywhere else. It and the comment's line are deleted from Mobilebox after 30 days. Turn the comment off with `comment: false`: then nothing is posted or stored.
 
@@ -103,7 +104,7 @@ Use `continue-on-error: true` and `steps.<id>.outputs.result` to report instead 
 2. Uploads your APK, installs it with its permissions granted, and opens it.
 3. Waits for `wait-for` on screen, or checks that the app is still in the foreground.
 4. Saves a screenshot and uploads it as an artifact, on a pass and on a fail.
-5. On a pull request (unless `comment: false`), posts or updates the proof comment.
+5. On a pull request (unless `comment: false`), posts or updates the proof comment: the verdict, time and cost, the last screen and these steps with their times.
 6. Deletes the phone: on a pass, on a fail, and when you cancel the job.
 
 A lost create is retried with the same idempotency key, so a flaky network never makes a second phone.
