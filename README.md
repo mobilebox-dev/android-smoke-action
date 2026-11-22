@@ -65,7 +65,7 @@ jobs:
 
 > ✅ com.example.app launch tested on a Mobilebox cloud phone · Android 14 · 6 s · $0.01<br>
 > *(the last screen)*<br>
-> **Steps** 1. Fresh cloud phone ready in 0.4 s · 2. Installed `com.example.app` 1.0 from this build · 3. Opened it; "Welcome" on screen after 3.5 s · 4. Screenshot, then the phone is deleted<br>
+> **Steps** 1. Fresh cloud phone ready in 0.4 s · 2. Installed `com.example.app` 1.0 · 3. Opened it; "Welcome" on screen after 3.5 s · 4. Screenshot, then the phone is deleted<br>
 > Tested on Mobilebox · Run your own phone
 
 Live ones: every pull request in [mobilebox-dev/proof-demo-calculator](https://github.com/mobilebox-dev/proof-demo-calculator/pulls?q=is%3Apr), a fork of Fossify Calculator that runs this action on each PR, and [this repo's self-test PR](https://github.com/mobilebox-dev/android-smoke-action/pull/2#issuecomment-6808386702).

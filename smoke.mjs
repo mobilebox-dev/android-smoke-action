@@ -93,7 +93,7 @@ try {
 
   app = await call(`/v1/phones/${id}/apps?grant_permissions=true`, 'POST', await readFile(apk))
   console.log(`Installed ${app.package} ${app.version_name ?? ''} on ${id}`)
-  steps.push(`Installed \`${app.package}\`${app.version_name ? ` ${app.version_name}` : ''} from this build, permissions granted`)
+  steps.push(`Installed \`${app.package}\`${app.version_name ? ` ${app.version_name}` : ''}, permissions granted`)
   const opened = Date.now()
   let result = await call(`/v1/phones/${id}/actions`, 'POST', { actions: [
     { type: 'open_app', package: app.package },
